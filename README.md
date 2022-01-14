@@ -1,16 +1,37 @@
-# BASH FOR YOU
+# Bash For You
 
 _The bash script manager._
 
-Syntax: `bfu [command] [option]`
+## Install
+
+```
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/anhhaome/bash-for-you/master/install.sh)"
+```
+
+## Usage
+
+```
+--- BASH FOR YOU ---
+The bash script manager ($VERSION).
+
+Syntax: bfu [command] [option]
 
 Commands:
-  - `[empty]`: List and execute script.
-  - `edit <name>`: Create or edit the script with name.
-  - `install`: Install BFU for global usage.
-  - `uninstall`: Uninstall BFU in global.
-  - `help`: Display help.
+    list      List scripts.
+    exec [name]
+              List and execute script.
+    create <name>
+              Create the script with name.
+    edit [name]
+              Edit the script with name. If name is not specify, list and select it.
+    remove [name]
+              List and execute script.
+    install   Install BFU for global usage.
+    uninstall Uninstall BFU in global.
+    help      Display help.
 
 Options:
-  - `-h`: Display help.
-  - `-v`: Display version.
+    -h         Display help.
+    -v         Display version.
+
+```

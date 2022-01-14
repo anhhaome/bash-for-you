@@ -1,0 +1,244 @@
+#!/bin/bash
+
+ROOT="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+HOME_ROOT="$HOME/.bfu"
+VERSION='v0.0.1'
+STORAGE_DIR="$HOME_ROOT/.storage"
+BIN_PATH="/usr/local/bin/bfu"
+
+Help()
+{
+  # Display Help
+  echo "--- BASH FOR YOU ---"
+  echo "The bash script manager ($VERSION)."
+  echo
+  echo "Syntax: bfu [command] [option]"
+  echo ""
+  echo "Commands:"
+  echo "    list       List scripts."
+  echo "    exec [name]"
+  echo "               List and execute script."
+  echo "    create <name>"
+  echo "               Create the script with name."
+  echo "    edit [name]"
+  echo "               Edit the script with name. If name is not specify, list and select it."
+  echo "    remove [name]"
+  echo "               List and execute script."
+  echo "    install    Install BFU for global usage."
+  echo "    uninstall  Uninstall BFU in global."
+  echo "    help       Display help."
+  echo ""
+  echo "Options:"
+  echo "    -h         Display help."
+  echo "    -v         Display version."
+  echo
+}
+
+Init()
+{
+  # init BFU
+  [ ! -d "$HOME_ROOT" ] && mkdir "$HOME_ROOT"
+  [ ! -d "$STORAGE_DIR" ] && mkdir "$STORAGE_DIR"
+}
+
+FILENAME=""
+ListScript()
+{
+  echo "Your scripts:"
+  echo ""
+  cd $STORAGE_DIR
+
+  # list scripts
+  INDEX=0
+  for f in *;
+  do
+    echo "[$INDEX] $f"
+    INDEX=$((INDEX + 1))
+  done
+}
+
+SelectScript()
+{
+  cd $STORAGE_DIR
+
+  ListScript
+  echo ""
+
+  # select script
+  read -n 1 -p "Your selection: " OP
+  printf "\n"
+
+  # exec script
+  INDEX=0 
+  for f in *;
+  do
+    if [[ "$INDEX" == "$OP" ]]
+    then
+      FILENAME="$f"
+    fi
+    INDEX=$((INDEX + 1))
+  done
+
+  if [ -z "$FILENAME" ]
+  then
+    echo "Invalid option."
+    exit
+  fi
+}
+
+MODE=""
+EditScript()
+{
+  FILEPATH="$STORAGE_DIR/$FILENAME"
+
+  # handle existed file
+  if [[ "$MODE" == "edit" ]]
+  then
+    if [ -f "$FILEPATH" ]; then
+      nano "$FILEPATH"
+      exit
+    fi
+    echo "File not found"
+    exit
+  fi
+
+  if [ -f "$FILEPATH" ]; then
+    echo "Script existed. You can:"
+    echo "  [O|o]  Overwrite"
+    echo "  [E|e]  Edit"
+    echo "  [any]  Do nothing"
+    read -n 1 -p "Your selection: " OP
+    printf "\n"
+
+    case "$OP" in
+      E|e)
+        nano "$FILEPATH"
+        exit;;
+      O|o) ;;
+      *)
+        exit;;
+    esac
+  fi
+
+  # create a new file
+  echo $(printf "#!/bin/bash\n") > "$FILEPATH"
+  nano "$FILEPATH"
+  chmod +x "$FILEPATH"
+}
+
+RemoveScript()
+{
+  FILEPATH="$STORAGE_DIR/$FILENAME"
+
+  if [ -f "$FILEPATH" ]; then
+    rm "$FILEPATH"
+    echo "Removed"
+    exit
+  fi
+  
+  echo "File not found"
+}
+
+ExecScript()
+{
+  echo "Execute \"$FILENAME\""
+  echo ""
+  echo "---- RESULTS ----"
+
+  FILEPATH="$STORAGE_DIR/$FILENAME"
+  "$FILEPATH"
+}
+
+Install()
+{
+  if [ "$EUID" -ne 0 ]
+    then echo "Please run as root"
+    exit
+  fi
+  ln -s "$ROOT/bfu" "$BIN_PATH"
+  chmod +x "$BIN_PATH"
+  echo "Installed"
+}
+
+Uninstall()
+{
+  if [ "$EUID" -ne 0 ]
+    then echo "Please run as root"
+    exit
+  fi
+  rm "$BIN_PATH"
+  echo "Uninstalled"
+}
+
+# handle options
+while getopts ":hv" option; do
+  case $option in
+    h) # display Help
+      Help
+      exit;;
+    v) # displat version
+      echo "$VERSION"
+      exit;;
+    \?) # incorrect option
+      echo "Error: Invalid option"
+      exit;;
+  esac
+done
+
+# init
+Init
+
+# detect command
+COMMAND="$1"
+case "$COMMAND" in
+  list)
+    ListScript
+    exit;;
+  create)
+    FILENAME="$2"
+    if [ -z "$FILENAME" ] 
+    then
+      printf "Name is required.\n\n"
+      Help
+      exit
+    fi
+    EditScript
+    exit;;
+  edit)
+    MODE="edit"
+    FILENAME="$2"
+    if [ -z "$FILENAME" ] 
+    then
+      SelectScript
+    fi
+    EditScript
+    exit;;
+  remove)
+    FILENAME="$2"
+    if [ -z "$FILENAME" ] 
+    then
+      SelectScript
+    fi
+    RemoveScript
+    exit;;
+  help)
+    Help
+    exit;;
+  exec)
+    FILENAME="$2"
+    if [ -z "$FILENAME" ] 
+    then
+      SelectScript
+    fi
+    ExecScript
+    exit;;
+  install)
+    Install
+    exit;;
+  uninstall)
+    Uninstall
+    exit;;
+  *)
+    Help
+    exit;;
+esac

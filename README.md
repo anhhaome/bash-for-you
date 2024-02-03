@@ -35,3 +35,15 @@ Options:
     -v         Display version.
 
 ```
+
+## Python
+
+Execute a script via custom protocol.
+
+```bash
+python bfu.py "bfu://echo%20helloworld"
+```
+
+## License
+
+MIT.
